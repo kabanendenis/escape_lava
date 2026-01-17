@@ -194,10 +194,21 @@ export class BootScene extends Phaser.Scene {
 
   private createPlayerPlaceholder(): void {
     const playerGraphics = this.make.graphics({ x: 0, y: 0 });
-    playerGraphics.fillStyle(0x4488ff, 1);
-    playerGraphics.fillRect(0, 0, 32, 48);
-    playerGraphics.fillStyle(0xffcc99, 1);
-    playerGraphics.fillCircle(16, 10, 8);
+
+    const centerX = 16;
+    const headY = 10;
+    const bodyTopY = 18;
+    const bodyBottomY = 34;
+    const armY = 24;
+    const legY = 44;
+
+    playerGraphics.lineStyle(3, 0xffffff, 1);
+    playerGraphics.strokeCircle(centerX, headY, 7);
+    playerGraphics.lineBetween(centerX, bodyTopY, centerX, bodyBottomY);
+    playerGraphics.lineBetween(8, armY, 24, armY);
+    playerGraphics.lineBetween(centerX, bodyBottomY, 8, legY);
+    playerGraphics.lineBetween(centerX, bodyBottomY, 24, legY);
+
     playerGraphics.generateTexture('player', 32, 48);
     playerGraphics.destroy();
   }
