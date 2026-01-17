@@ -89,8 +89,8 @@ export class HUD extends Phaser.GameObjects.Container {
     container.setSize(width, height);
     container.setInteractive();
 
-    container.on('pointerdown', () => {
-      if (!this.scene.scale.fullscreenAvailable) return;
+    container.on('pointerup', () => {
+      if (!this.scene.sys.game.device.fullscreen.available) return;
       if (this.scene.scale.isFullscreen) {
         this.scene.scale.stopFullscreen();
       } else {
@@ -102,7 +102,7 @@ export class HUD extends Phaser.GameObjects.Container {
     this.fullscreenLabel = label;
     this.add(container);
 
-    if (!this.scene.scale.fullscreenAvailable) {
+    if (!this.scene.sys.game.device.fullscreen.available) {
       container.setVisible(false);
     }
 
