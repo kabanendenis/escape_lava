@@ -91,10 +91,10 @@ export class HUD extends Phaser.GameObjects.Container {
   }
 
   private createFullscreenButton(): void {
-    const width = 70;
-    const height = 28;
+    const width = 90;
+    const height = 34;
     const x = 15 + width / 2;
-    const y = 58;
+    const y = 64;
 
     const container = this.scene.add.container(x, y);
 
@@ -106,7 +106,7 @@ export class HUD extends Phaser.GameObjects.Container {
 
     const label = this.scene.add.text(0, 0, 'FULL', {
       fontFamily: 'Arial Black, Arial',
-      fontSize: '14px',
+      fontSize: '16px',
       color: '#ffffff',
     });
     label.setOrigin(0.5);

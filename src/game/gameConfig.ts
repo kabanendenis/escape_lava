@@ -7,7 +7,7 @@ export const gameConfig: Phaser.Types.Core.GameConfig = {
   parent: 'game-container',
   backgroundColor: COLORS.BACKGROUND,
   scale: {
-    mode: Phaser.Scale.FIT,
+    mode: Phaser.Scale.ENVELOP,
     autoCenter: Phaser.Scale.CENTER_BOTH,
     width: GAME_WIDTH,
     height: GAME_HEIGHT,
@@ -19,6 +19,8 @@ export const gameConfig: Phaser.Types.Core.GameConfig = {
       width: GAME_WIDTH * 2,
       height: GAME_HEIGHT * 2,
     },
+    expandParent: true,
+    fullscreenTarget: 'game-container',
   },
   physics: {
     default: 'arcade',

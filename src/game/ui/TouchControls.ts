@@ -47,8 +47,8 @@ export class TouchControls extends Phaser.GameObjects.Container {
   }
 
   private createControls(): void {
-    const btnSize = 70;
-    const padding = 20;
+    const btnSize = 90;
+    const padding = 24;
     const bottomY = GAME_HEIGHT - padding - btnSize / 2;
 
     this.leftBtn = this.createButton(
@@ -72,7 +72,7 @@ export class TouchControls extends Phaser.GameObjects.Container {
     this.jumpBtn = this.createButton(
       GAME_WIDTH - padding - btnSize / 2,
       bottomY,
-      btnSize * 1.2,
+      btnSize * 1.4,
       'JUMP',
       () => {
         this.touchInput.jump = true;
@@ -105,7 +105,7 @@ export class TouchControls extends Phaser.GameObjects.Container {
 
     const text = this.scene.add.text(0, 0, label, {
       fontFamily: 'Arial Black, Arial',
-      fontSize: label.length > 1 ? '16px' : '28px',
+      fontSize: label.length > 1 ? '18px' : '32px',
       color: '#ffffff',
     });
     text.setOrigin(0.5);
