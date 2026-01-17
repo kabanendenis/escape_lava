@@ -32,7 +32,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   };
 
   constructor(scene: Phaser.Scene, x: number, y: number, maxHealth: number) {
-    super(scene, x, y, 'player');
+    super(scene, x, y, 'player_idle_1');
 
     this.maxHealth = maxHealth;
     this.health = maxHealth;
@@ -224,6 +224,19 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   }
 
   private updateVisuals(): void {
+    const body = this.body as Phaser.Physics.Arcade.Body;
+    const moving = Math.abs(body.velocity.x) > 10;
+
+    if (this.isClimbing) {
+      this.anims.play('player_climb', true);
+    } else if (!this.isOnGround) {
+      this.anims.play('player_jump', true);
+    } else if (moving) {
+      this.anims.play('player_run', true);
+    } else {
+      this.anims.play('player_idle', true);
+    }
+
     if (this.isInvincible) {
       this.setAlpha(Math.sin(this.scene.time.now / 50) * 0.3 + 0.7);
     } else {

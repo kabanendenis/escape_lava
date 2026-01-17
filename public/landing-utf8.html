@@ -1,0 +1,450 @@
+﻿<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Escape Lava! — игра, сделанная Эриком (7 лет)</title>
+    <style>
+      :root {
+        --bg: #140c0f;
+        --bg-2: #2a1716;
+        --lava: #ff4d2e;
+        --gold: #ffd36a;
+        --ink: #f6f1e7;
+        --muted: #cbb9a5;
+        --card: #231517;
+        --accent: #7ad1ff;
+        --success: #3ddc84;
+        --shadow: rgba(0, 0, 0, 0.35);
+      }
+
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      body {
+        font-family: "Trebuchet MS", "Lucida Sans Unicode", "Lucida Grande", sans-serif;
+        background: radial-gradient(1200px 600px at 20% -10%, #2f1f23, transparent),
+          radial-gradient(900px 500px at 90% 10%, #2a1c1a, transparent),
+          linear-gradient(180deg, var(--bg), var(--bg-2));
+        color: var(--ink);
+        line-height: 1.5;
+      }
+
+      a {
+        color: inherit;
+        text-decoration: none;
+      }
+
+      .page {
+        overflow: hidden;
+      }
+
+      .hero {
+        padding: 56px 16px 32px;
+        position: relative;
+      }
+
+      .hero::before,
+      .hero::after {
+        content: "";
+        position: absolute;
+        border-radius: 999px;
+        filter: blur(0px);
+        opacity: 0.25;
+        z-index: 0;
+      }
+
+      .hero::before {
+        width: 420px;
+        height: 420px;
+        background: radial-gradient(circle, var(--lava), transparent 70%);
+        right: -120px;
+        top: -120px;
+      }
+
+      .hero::after {
+        width: 280px;
+        height: 280px;
+        background: radial-gradient(circle, var(--accent), transparent 70%);
+        left: -80px;
+        bottom: -80px;
+      }
+
+      .container {
+        width: min(1100px, 100%);
+        margin: 0 auto;
+        position: relative;
+        z-index: 1;
+      }
+
+      .hero-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 28px;
+        align-items: center;
+      }
+
+      .badge {
+        display: inline-flex;
+        gap: 8px;
+        align-items: center;
+        padding: 6px 14px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.08);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        font-size: 14px;
+        color: var(--gold);
+      }
+
+      h1,
+      h2,
+      h3 {
+        font-family: "Georgia", "Times New Roman", serif;
+      }
+
+      h1 {
+        font-size: clamp(32px, 5vw, 56px);
+        margin: 12px 0 16px;
+        line-height: 1.1;
+      }
+
+      .hero p {
+        color: var(--muted);
+        font-size: 18px;
+      }
+
+      .cta-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-top: 22px;
+      }
+
+      .cta {
+        padding: 12px 22px;
+        border-radius: 12px;
+        font-weight: 700;
+        letter-spacing: 0.3px;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .cta-primary {
+        background: linear-gradient(135deg, var(--lava), #ff8a3d);
+        color: #1c0d0b;
+        box-shadow: 0 12px 24px rgba(255, 88, 52, 0.35);
+      }
+
+      .cta-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 16px 30px rgba(255, 88, 52, 0.45);
+      }
+
+      .cta-secondary {
+        background: rgba(255, 255, 255, 0.08);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        color: var(--ink);
+      }
+
+      .hero-card {
+        background: rgba(35, 21, 23, 0.85);
+        border-radius: 18px;
+        padding: 16px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        box-shadow: 0 20px 40px var(--shadow);
+      }
+
+      .hero-card img {
+        width: 100%;
+        border-radius: 12px;
+        display: block;
+      }
+
+      .section {
+        padding: 56px 16px;
+      }
+
+      .section-title {
+        font-size: clamp(24px, 4vw, 36px);
+        margin-bottom: 16px;
+      }
+
+      .section-subtitle {
+        color: var(--muted);
+        max-width: 700px;
+        margin-bottom: 24px;
+        font-size: 17px;
+      }
+
+      .cards {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 16px;
+      }
+
+      .card {
+        background: var(--card);
+        padding: 16px;
+        border-radius: 16px;
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        min-height: 160px;
+      }
+
+      .card h3 {
+        margin-bottom: 8px;
+        font-size: 20px;
+      }
+
+      .card p {
+        color: var(--muted);
+        font-size: 15px;
+      }
+
+      .gallery {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 14px;
+      }
+
+      .gallery-item {
+        background: var(--card);
+        border-radius: 14px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        padding: 10px;
+      }
+
+      .gallery img {
+        width: 100%;
+        border-radius: 14px;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        box-shadow: 0 18px 30px rgba(0, 0, 0, 0.3);
+        display: block;
+      }
+
+      .caption {
+        margin-top: 10px;
+        color: var(--muted);
+        font-size: 14px;
+      }
+
+      .price {
+        background: linear-gradient(135deg, #1f1b24, #2c1a19);
+        border-radius: 20px;
+        padding: 24px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        display: grid;
+        gap: 16px;
+      }
+
+      .price .amount {
+        font-size: 40px;
+        color: var(--gold);
+      }
+
+      .price ul {
+        list-style: none;
+        display: grid;
+        gap: 8px;
+        color: var(--muted);
+      }
+
+      .price li::before {
+        content: "✓";
+        color: var(--success);
+        margin-right: 8px;
+      }
+
+      .footer {
+        padding: 40px 16px 56px;
+        text-align: center;
+        color: var(--muted);
+      }
+
+      .note {
+        background: rgba(255, 255, 255, 0.06);
+        padding: 12px 16px;
+        border-radius: 12px;
+        border: 1px dashed rgba(255, 255, 255, 0.2);
+        font-size: 14px;
+        color: var(--muted);
+      }
+
+      .final-cta {
+        background: linear-gradient(135deg, rgba(255, 77, 46, 0.2), rgba(122, 209, 255, 0.15));
+        border-radius: 20px;
+        padding: 28px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        display: grid;
+        gap: 16px;
+        text-align: center;
+      }
+
+      .final-cta h3 {
+        font-size: clamp(22px, 4vw, 32px);
+      }
+
+      @media (max-width: 640px) {
+        .cta-row {
+          flex-direction: column;
+          align-items: stretch;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page">
+      <header class="hero">
+        <div class="container hero-grid">
+          <div>
+            <span class="badge">🔥 Escape Lava! — семейный инди‑проект</span>
+            <h1>Escape Lava! — игра, которую сделал Эрик (7 лет) вместе с папой</h1>
+            <p>
+              Прыгай по платформам, карабкайся по лестницам, спасайся от лавы и собирай монетки,
+              которые замедляют огонь на 1 секунду. Короткие уровни, быстрый темп и много «ещё
+              один забег».
+            </p>
+            <div class="cta-row">
+              <a class="cta cta-primary" href="#buy">Купить за 1 €</a>
+              <a class="cta cta-secondary" href="#screens">Смотреть скриншоты</a>
+            </div>
+            <div class="note" style="margin-top: 18px;">Подходит для всей семьи. Разработка идёт дальше — будем рады поддержке.</div>
+          </div>
+          <div class="hero-card">
+            <img src="assets/screens/1.png" alt="Скриншот игры Escape Lava" />
+          </div>
+        </div>
+      </header>
+
+      <section class="section" id="features">
+        <div class="container">
+          <h2 class="section-title">Зачем покупать</h2>
+          <p class="section-subtitle">
+            Пять причин поддержать Escape Lava! и получить игру за символическую цену.
+          </p>
+          <div class="cards">
+            <div class="card">
+              <h3>Доступно и честно</h3>
+              <p>Игра понятна детям и взрослым: правила простые, а уровень всегда проходим.</p>
+            </div>
+            <div class="card">
+              <h3>Каждый забег новый</h3>
+              <p>Генератор уровней делает каждую попытку свежей и непредсказуемой.</p>
+            </div>
+            <div class="card">
+              <h3>Механики с характером</h3>
+              <p>Лава поднимается, лестницы и порталы спасают, монетки дают секунду передышки.</p>
+            </div>
+            <div class="card">
+              <h3>Семейный проект</h3>
+              <p>Это игра, которую ребёнок сделал вместе с папой — поддержите маленького разработчика.</p>
+            </div>
+            <div class="card">
+              <h3>Цена как спасибо</h3>
+              <p>Всего 1 € — это вклад в новые уровни, музыку и улучшение графики.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="screens">
+        <div class="container">
+          <h2 class="section-title">Скриншоты</h2>
+          <p class="section-subtitle">Фрагменты уровней и механик. Всё реально из игры.</p>
+          <div class="gallery">
+            <div class="gallery-item">
+              <img src="assets/screens/1.png" alt="Уровень 1" />
+              <div class="caption">Стартовый рывок: лава уже близко, нужно подниматься выше.</div>
+            </div>
+            <div class="gallery-item">
+              <img src="assets/screens/2.png" alt="Уровень 2" />
+              <div class="caption">Лестницы появляются чаще и стоят вне платформ — карабкаться удобно.</div>
+            </div>
+            <div class="gallery-item">
+              <img src="assets/screens/3.png" alt="Уровень 3" />
+              <div class="caption">Порталы доступны на всех сложностях и спасают, когда опасно.</div>
+            </div>
+            <div class="gallery-item">
+              <img src="assets/screens/4.png" alt="Уровень 4" />
+              <div class="caption">Монетки дают +1 секунду замедления лавы — шанс отдышаться.</div>
+            </div>
+            <div class="gallery-item">
+              <img src="assets/screens/5.png" alt="Уровень 5" />
+              <div class="caption">Финишный подъём: быстрый темп и азарт до последней платформы.</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="buy">
+        <div class="container">
+          <h2 class="section-title">Купить и поддержать</h2>
+          <p class="section-subtitle">
+            Мы продаём игру за 1 евро, чтобы собрать на новые уровни, музыку и улучшение графики.
+          </p>
+          <div class="price">
+            <div>
+              <div class="amount">1 €</div>
+              <div style="color: var(--muted);">разовая покупка</div>
+            </div>
+            <ul>
+              <li>Полная версия игры</li>
+              <li>Поддержка разработки</li>
+              <li>Доступ к будущим обновлениям</li>
+            </ul>
+            <div class="cta-row">
+              <a class="cta cta-primary" href="#contact">Купить сейчас</a>
+              <a class="cta cta-secondary" href="#contact">Связаться с нами</a>
+            </div>
+            <div class="note">Мы готовы отправить игру лично. Напишите нам, и мы всё объясним.</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="contact">
+        <div class="container">
+          <h2 class="section-title">Контакты</h2>
+          <p class="section-subtitle">
+            Укажите удобный контакт, и мы пришлём игру.
+          </p>
+          <div class="cards">
+            <div class="card">
+              <h3>Почта</h3>
+              <p>your@email.com</p>
+            </div>
+            <div class="card">
+              <h3>Мессенджер</h3>
+              <p>@your_handle</p>
+            </div>
+            <div class="card">
+              <h3>Соцсети</h3>
+              <p>vk.com/yourpage</p>
+            </div>
+          </div>
+          <div class="note" style="margin-top: 16px;">Замените контакты на свои — я могу это сделать за вас.</div>
+        </div>
+      </section>
+
+      <section class="section" id="final-cta">
+        <div class="container">
+          <div class="final-cta">
+            <h3>Готовы поддержать Эрика и получить Escape Lava!?</h3>
+            <p style="color: var(--muted);">Всего 1 € — и вы помогаете развивать семейный инди‑проект.</p>
+            <div class="cta-row" style="justify-content: center;">
+              <a class="cta cta-primary" href="#buy">Купить за 1 €</a>
+              <a class="cta cta-secondary" href="#contact">Связаться с нами</a>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <footer class="footer">
+        <div>Escape Lava — сделано Эриком (7 лет) и папой. Спасибо за поддержку!</div>
+      </footer>
+    </div>
+  </body>
+</html>

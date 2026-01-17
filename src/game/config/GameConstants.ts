@@ -43,6 +43,7 @@ export const COLORS = {
   PLATFORM: 0x8b7355,
   LADDER: 0x654321,
   PORTAL: 0x4444ff,
+  COIN: 0xffcc33,
   UI_TEXT: '#ffffff',
   UI_SHADOW: '#000000',
 };

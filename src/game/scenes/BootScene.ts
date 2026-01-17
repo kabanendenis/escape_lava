@@ -52,7 +52,6 @@ export class BootScene extends Phaser.Scene {
 
   private loadAssets(): void {
     this.createPlaceholderGraphics();
-    this.load.image('player', 'assets/sprites/player.png');
 
     // Audio files are optional - game works without them
     // To add sounds, place .wav files in public/assets/audio/
@@ -65,6 +64,34 @@ export class BootScene extends Phaser.Scene {
   }
 
   private createPlaceholderGraphics(): void {
+    const createPlayerFrame = (key: string, armSwing: number, legSwing: number): void => {
+      const g = this.make.graphics({ x: 0, y: 0 });
+      g.fillStyle(0xf2f2f2, 1);
+      g.fillCircle(16, 10, 7);
+
+      g.lineStyle(4, 0x1a1a1a, 1);
+      g.lineBetween(16, 17, 16, 32);
+
+      g.lineStyle(3, 0x1a1a1a, 1);
+      g.lineBetween(16, 22, 8, 24 + armSwing);
+      g.lineBetween(16, 22, 24, 24 - armSwing);
+
+      g.lineStyle(3, 0x1a1a1a, 1);
+      g.lineBetween(16, 32, 10, 46 + legSwing);
+      g.lineBetween(16, 32, 22, 46 - legSwing);
+
+      g.generateTexture(key, 32, 48);
+      g.destroy();
+    };
+
+    createPlayerFrame('player_idle_1', 0, 0);
+    createPlayerFrame('player_idle_2', 1, -1);
+    createPlayerFrame('player_run_1', 3, -4);
+    createPlayerFrame('player_run_2', -3, 4);
+    createPlayerFrame('player_climb_1', 2, 2);
+    createPlayerFrame('player_climb_2', -2, -2);
+    createPlayerFrame('player_jump', 0, -2);
+
     const platformGraphics = this.make.graphics({ x: 0, y: 0 });
     platformGraphics.fillStyle(COLORS.PLATFORM, 1);
     platformGraphics.fillRect(0, 0, 32, 32);
@@ -132,6 +159,16 @@ export class BootScene extends Phaser.Scene {
     heartPickupGraphics.generateTexture('heart_pickup', 24, 24);
     heartPickupGraphics.destroy();
 
+    const coinGraphics = this.make.graphics({ x: 0, y: 0 });
+    coinGraphics.fillStyle(COLORS.COIN, 1);
+    coinGraphics.fillCircle(10, 10, 9);
+    coinGraphics.fillStyle(0xffe27a, 1);
+    coinGraphics.fillCircle(7, 7, 3);
+    coinGraphics.lineStyle(2, 0xd49a00);
+    coinGraphics.strokeCircle(10, 10, 9);
+    coinGraphics.generateTexture('coin', 20, 20);
+    coinGraphics.destroy();
+
     const lavaGraphics = this.make.graphics({ x: 0, y: 0 });
     lavaGraphics.fillStyle(0xff3300, 1);
     lavaGraphics.fillRect(0, 0, 64, 64);
@@ -185,31 +222,45 @@ export class BootScene extends Phaser.Scene {
   }
 
   create(): void {
-    if (!this.textures.exists('player')) {
-      this.createPlayerPlaceholder();
-    }
-
+    this.createAnimations();
     this.scene.start(SCENES.MENU);
   }
 
-  private createPlayerPlaceholder(): void {
-    const playerGraphics = this.make.graphics({ x: 0, y: 0 });
+  private createAnimations(): void {
+    if (!this.anims.exists('player_idle')) {
+      this.anims.create({
+        key: 'player_idle',
+        frames: [{ key: 'player_idle_1' }, { key: 'player_idle_2' }],
+        frameRate: 3,
+        repeat: -1,
+      });
+    }
 
-    const centerX = 16;
-    const headY = 10;
-    const bodyTopY = 18;
-    const bodyBottomY = 34;
-    const armY = 24;
-    const legY = 44;
+    if (!this.anims.exists('player_run')) {
+      this.anims.create({
+        key: 'player_run',
+        frames: [{ key: 'player_run_1' }, { key: 'player_run_2' }],
+        frameRate: 8,
+        repeat: -1,
+      });
+    }
 
-    playerGraphics.lineStyle(3, 0xffffff, 1);
-    playerGraphics.strokeCircle(centerX, headY, 7);
-    playerGraphics.lineBetween(centerX, bodyTopY, centerX, bodyBottomY);
-    playerGraphics.lineBetween(8, armY, 24, armY);
-    playerGraphics.lineBetween(centerX, bodyBottomY, 8, legY);
-    playerGraphics.lineBetween(centerX, bodyBottomY, 24, legY);
+    if (!this.anims.exists('player_climb')) {
+      this.anims.create({
+        key: 'player_climb',
+        frames: [{ key: 'player_climb_1' }, { key: 'player_climb_2' }],
+        frameRate: 6,
+        repeat: -1,
+      });
+    }
 
-    playerGraphics.generateTexture('player', 32, 48);
-    playerGraphics.destroy();
+    if (!this.anims.exists('player_jump')) {
+      this.anims.create({
+        key: 'player_jump',
+        frames: [{ key: 'player_jump' }],
+        frameRate: 1,
+        repeat: 0,
+      });
+    }
   }
 }

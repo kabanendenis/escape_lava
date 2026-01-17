@@ -5,6 +5,8 @@ export class HUD extends Phaser.GameObjects.Container {
   private hearts: Phaser.GameObjects.Image[] = [];
   private timerText: Phaser.GameObjects.Text;
   private floorText: Phaser.GameObjects.Text;
+  private coinIcon!: Phaser.GameObjects.Image;
+  private coinText!: Phaser.GameObjects.Text;
   private maxHearts: number;
   private fullscreenButton!: Phaser.GameObjects.Container;
   private fullscreenLabel!: Phaser.GameObjects.Text;
@@ -21,6 +23,7 @@ export class HUD extends Phaser.GameObjects.Container {
     this.createHearts();
     this.timerText = this.createTimerText();
     this.floorText = this.createFloorText();
+    this.createCoinUi();
     this.createFullscreenButton();
     this.registerFullscreenEvents();
   }
@@ -62,6 +65,29 @@ export class HUD extends Phaser.GameObjects.Container {
     text.setOrigin(1, 0);
     this.add(text);
     return text;
+  }
+
+  private createCoinUi(): void {
+    const x = GAME_WIDTH - 80;
+    const y = 50;
+
+    const icon = this.scene.add.image(x, y, 'coin');
+    icon.setOrigin(0, 0.5);
+    icon.setScale(1);
+    this.add(icon);
+
+    const text = this.scene.add.text(x + 24, y - 10, '0', {
+      fontFamily: 'Arial Black, Arial',
+      fontSize: '20px',
+      color: '#ffdd66',
+      stroke: '#000000',
+      strokeThickness: 3,
+    });
+    text.setOrigin(0, 0);
+    this.add(text);
+
+    this.coinIcon = icon;
+    this.coinText = text;
   }
 
   private createFullscreenButton(): void {
@@ -125,11 +151,13 @@ export class HUD extends Phaser.GameObjects.Container {
     maxHealth: number,
     time: string,
     currentFloor: number,
-    targetFloor: number
+    targetFloor: number,
+    coinCount: number
   ): void {
     this.updateHearts(currentHealth, maxHealth);
     this.timerText.setText(time);
     this.floorText.setText(`${currentFloor} / ${targetFloor}`);
+    this.coinText.setText(`${coinCount}`);
   }
 
   private updateHearts(currentHealth: number, _maxHealth: number): void {

@@ -5,11 +5,14 @@ export class Lava extends Phaser.GameObjects.Container {
   private surface: Phaser.GameObjects.TileSprite;
   private lavaBody: Phaser.GameObjects.Rectangle;
   private riseSpeed: number;
+  private baseSpeed: number;
   private currentY: number;
   private lavaColor: number;
   private glowGraphics: Phaser.GameObjects.Graphics;
   private startDelay: number;
   private isRising = false;
+  private slowTimer = 0;
+  private slowFactor = 0.2;
 
   constructor(
     scene: Phaser.Scene,
@@ -22,6 +25,7 @@ export class Lava extends Phaser.GameObjects.Container {
 
     this.currentY = startY;
     this.riseSpeed = riseSpeed;
+    this.baseSpeed = riseSpeed;
     this.lavaColor = color;
     this.startDelay = startDelay;
 
@@ -93,7 +97,13 @@ export class Lava extends Phaser.GameObjects.Container {
   update(delta: number): void {
     // Only rise after start delay
     if (this.isRising) {
-      const moveAmount = (this.riseSpeed * delta) / 1000;
+      let effectiveSpeed = this.riseSpeed;
+      if (this.slowTimer > 0) {
+        this.slowTimer = Math.max(0, this.slowTimer - delta);
+        effectiveSpeed = this.baseSpeed * this.slowFactor;
+      }
+
+      const moveAmount = (effectiveSpeed * delta) / 1000;
       this.currentY -= moveAmount;
       this.setY(this.currentY);
     }
@@ -120,9 +130,14 @@ export class Lava extends Phaser.GameObjects.Container {
 
   setSpeed(speed: number): void {
     this.riseSpeed = speed;
+    this.baseSpeed = speed;
   }
 
   getSpeed(): number {
     return this.riseSpeed;
+  }
+
+  applySlow(durationMs: number): void {
+    this.slowTimer += durationMs;
   }
 }

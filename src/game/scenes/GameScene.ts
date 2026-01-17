@@ -25,10 +25,12 @@ export class GameScene extends Phaser.Scene {
   private ladders!: Phaser.Physics.Arcade.StaticGroup;
   private portals!: Phaser.Physics.Arcade.Group;
   private heartPickups!: Phaser.Physics.Arcade.Group;
+  private coins!: Phaser.Physics.Arcade.Group;
   private finishLine!: Phaser.GameObjects.Image;
 
   private isPaused = false;
   private pauseOverlay!: Phaser.GameObjects.Container;
+  private coinCount = 0;
 
   constructor() {
     super({ key: SCENES.GAME });
@@ -39,6 +41,7 @@ export class GameScene extends Phaser.Scene {
     this.difficultySettings = DIFFICULTIES[this.difficulty];
     this.gameState = GameState.PLAYING;
     this.isPaused = false;
+    this.coinCount = 0;
   }
 
   create(): void {
@@ -77,6 +80,7 @@ export class GameScene extends Phaser.Scene {
     this.ladders = this.physics.add.staticGroup();
     this.portals = this.physics.add.group();
     this.heartPickups = this.physics.add.group();
+    this.coins = this.physics.add.group();
   }
 
   private createLevelGenerator(): void {
@@ -86,6 +90,7 @@ export class GameScene extends Phaser.Scene {
       this.ladders,
       this.portals,
       this.heartPickups,
+      this.coins,
       this.difficultySettings
     );
     this.levelGenerator.generateInitialLevel();
@@ -153,6 +158,14 @@ export class GameScene extends Phaser.Scene {
       undefined,
       this
     );
+
+    this.physics.add.overlap(
+      this.player,
+      this.coins,
+      this.handleCoinPickup.bind(this) as Phaser.Types.Physics.Arcade.ArcadePhysicsCallback,
+      undefined,
+      this
+    );
   }
 
   private handlePortalCollision(
@@ -176,6 +189,17 @@ export class GameScene extends Phaser.Scene {
     const heartSprite = heart as Phaser.Physics.Arcade.Sprite;
     this.player.heal(1);
     heartSprite.destroy();
+    this.playSound('pickup');
+  }
+
+  private handleCoinPickup(
+    _player: Phaser.GameObjects.GameObject,
+    coin: Phaser.GameObjects.GameObject
+  ): void {
+    const coinSprite = coin as Phaser.Physics.Arcade.Sprite;
+    this.coinCount += 1;
+    coinSprite.destroy();
+    this.lava.applySlow(1000);
     this.playSound('pickup');
   }
 
@@ -289,7 +313,8 @@ export class GameScene extends Phaser.Scene {
       this.player.getMaxHealth(),
       this.scoreManager.getFormattedTime(),
       this.getCurrentFloor(),
-      this.difficultySettings.targetFloors
+      this.difficultySettings.targetFloors,
+      this.coinCount
     );
 
     this.player.clearNearLadder();

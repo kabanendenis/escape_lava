@@ -35,6 +35,10 @@ const MAX_PATH_HISTORY = 24;
 const MAX_PATH_ATTEMPTS = 40;
 const MAX_DECOR_ATTEMPTS = 16;
 const PATTERN_CHANCE = 0.12;
+const BASE_LADDER_CHANCE = 0.55;
+const MIN_LADDER_CHANCE = 0.3;
+const COIN_CHANCE = 0.35;
+const PORTAL_CHANCE = 0.08;
 
 // Anti-clustering constants
 const MIN_DECOR_VERTICAL_GAP = TILE_SIZE * 2.5;
@@ -50,6 +54,7 @@ export class LevelGenerator {
   private ladders: Phaser.Physics.Arcade.StaticGroup;
   private portals: Phaser.Physics.Arcade.Group;
   private heartPickups: Phaser.Physics.Arcade.Group;
+  private coins: Phaser.Physics.Arcade.Group;
   private difficultySettings: DifficultySettings;
 
   private generatedHeight = 0;
@@ -66,6 +71,7 @@ export class LevelGenerator {
     ladders: Phaser.Physics.Arcade.StaticGroup,
     portals: Phaser.Physics.Arcade.Group,
     heartPickups: Phaser.Physics.Arcade.Group,
+    coins: Phaser.Physics.Arcade.Group,
     difficultySettings: DifficultySettings
   ) {
     this.scene = scene;
@@ -73,6 +79,7 @@ export class LevelGenerator {
     this.ladders = ladders;
     this.portals = portals;
     this.heartPickups = heartPickups;
+    this.coins = coins;
     this.difficultySettings = difficultySettings;
   }
 
@@ -122,6 +129,9 @@ export class LevelGenerator {
     }
 
     this.addDecorPlatforms(placedPath);
+    this.trySpawnLadder(placedPath);
+    this.trySpawnCoin(placedPath);
+    this.trySpawnPortal(placedPath);
 
     if (Math.random() < PATTERN_CHANCE) {
       this.tryPlacePattern();
@@ -555,6 +565,9 @@ export class LevelGenerator {
         case 'heart':
           this.createHeartPickup(element.x, element.y);
           break;
+        case 'coin':
+          this.createCoin(element.x, element.y);
+          break;
         default:
           break;
       }
@@ -563,9 +576,14 @@ export class LevelGenerator {
 
   private createLadder(x: number, y: number, height: number): void {
     const ladderHeightPx = TILE_SIZE * height;
+    const topY = y - ladderHeightPx;
+    const adjustedX = this.findClearLadderX(x, topY, y);
+    if (adjustedX === null) {
+      return;
+    }
     const centerY = y - ladderHeightPx / 2;
 
-    const ladder = this.ladders.create(x, centerY, 'ladder') as Phaser.Physics.Arcade.Sprite;
+    const ladder = this.ladders.create(adjustedX, centerY, 'ladder') as Phaser.Physics.Arcade.Sprite;
     ladder.setDisplaySize(TILE_SIZE, ladderHeightPx);
     ladder.refreshBody();
 
@@ -612,6 +630,129 @@ export class LevelGenerator {
     });
   }
 
+  private createCoin(x: number, y: number): void {
+    const coin = this.coins.create(x, y, 'coin') as Phaser.Physics.Arcade.Sprite;
+    const body = coin.body as Phaser.Physics.Arcade.Body;
+    body.setAllowGravity(false);
+    body.setImmovable(true);
+
+    this.scene.tweens.add({
+      targets: coin,
+      y: y - 6,
+      duration: 900,
+      yoyo: true,
+      repeat: -1,
+      ease: 'Sine.easeInOut',
+    });
+  }
+
+  private trySpawnLadder(anchor: PlacedPlatform): void {
+    const challenge = this.getDifficultyFactor();
+    const ladderChance = lerp(BASE_LADDER_CHANCE, MIN_LADDER_CHANCE, challenge);
+    if (Math.random() > ladderChance) {
+      return;
+    }
+
+    const height = randomInt(2, 4);
+    const bottomY = anchor.y - TILE_SIZE / 2;
+    const ladderHeightPx = height * TILE_SIZE;
+    const topY = bottomY - ladderHeightPx;
+
+    const baseLeft = anchor.left - TILE_SIZE / 2;
+    const baseRight = anchor.right + TILE_SIZE / 2;
+    const offsets = [0, TILE_SIZE, TILE_SIZE * 2];
+
+    for (const offset of offsets) {
+      const candidates = [baseRight + offset, baseLeft - offset];
+      for (const candidate of candidates) {
+        const x = this.clampPlatformX(candidate, 1);
+        if (this.isLadderClear(x, topY, bottomY)) {
+          this.createLadder(x, bottomY, height);
+          return;
+        }
+      }
+    }
+  }
+
+  private trySpawnCoin(anchor: PlacedPlatform): void {
+    if (Math.random() > COIN_CHANCE) {
+      return;
+    }
+
+    const y = anchor.y - TILE_SIZE * 1.2;
+    const offsets = [0, TILE_SIZE, -TILE_SIZE, TILE_SIZE * 2, -TILE_SIZE * 2];
+
+    for (const offset of offsets) {
+      const x = this.clampPlatformX(anchor.x + offset, 1);
+      if (this.isCoinClear(x, y)) {
+        this.createCoin(x, y);
+        return;
+      }
+    }
+  }
+
+  private trySpawnPortal(anchor: PlacedPlatform): void {
+    if (Math.random() > PORTAL_CHANCE) {
+      return;
+    }
+
+    const y = anchor.y - TILE_SIZE * 0.6;
+    const offsets = [0, TILE_SIZE * 2, -TILE_SIZE * 2, TILE_SIZE * 3, -TILE_SIZE * 3];
+
+    for (const offset of offsets) {
+      const x = this.clampPlatformX(anchor.x + offset, 1);
+      if (this.isPortalClear(x, y)) {
+        this.createPortal(x, y);
+        return;
+      }
+    }
+  }
+
+  private isLadderClear(x: number, topY: number, bottomY: number): boolean {
+    return !this.recentPlatforms.some((platform) => {
+      const platformTop = platform.y - TILE_SIZE / 2;
+      const platformBottom = platform.y + TILE_SIZE / 2;
+      const overlapsVertical = bottomY > platformTop && topY < platformBottom;
+      const overlapsHorizontal = x > platform.left - 4 && x < platform.right + 4;
+      return overlapsVertical && overlapsHorizontal;
+    });
+  }
+
+  private findClearLadderX(x: number, topY: number, bottomY: number): number | null {
+    const offsets = [0, TILE_SIZE, -TILE_SIZE, TILE_SIZE * 2, -TILE_SIZE * 2, TILE_SIZE * 3, -TILE_SIZE * 3];
+    for (const offset of offsets) {
+      const candidateX = this.clampPlatformX(x + offset, 1);
+      if (this.isLadderClear(candidateX, topY, bottomY)) {
+        return candidateX;
+      }
+    }
+    return null;
+  }
+
+  private isCoinClear(x: number, y: number): boolean {
+    return !this.recentPlatforms.some((platform) => {
+      const platformTop = platform.y - TILE_SIZE / 2;
+      const platformBottom = platform.y + TILE_SIZE / 2;
+      const overlapsVertical = y > platformTop && y < platformBottom;
+      const overlapsHorizontal = x > platform.left && x < platform.right;
+      return overlapsVertical && overlapsHorizontal;
+    });
+  }
+
+  private isPortalClear(x: number, y: number): boolean {
+    if (!this.isCoinClear(x, y)) {
+      return false;
+    }
+
+    const minPortalDistance = TILE_SIZE * 6;
+    const portals = this.portals.getChildren() as Phaser.Physics.Arcade.Sprite[];
+    return !portals.some((portal) => {
+      const dx = portal.x - x;
+      const dy = portal.y - y;
+      return Math.hypot(dx, dy) < minPortalDistance;
+    });
+  }
+
   update(cameraY: number): void {
     const generateAheadDistance = GAME_HEIGHT * 2;
     const targetHeight = -cameraY + generateAheadDistance;
@@ -639,5 +780,6 @@ export class LevelGenerator {
     this.ladders.getChildren().forEach((l) => destroyIfBelow(l as Phaser.Physics.Arcade.Sprite));
     this.portals.getChildren().forEach((p) => destroyIfBelow(p as Phaser.Physics.Arcade.Sprite));
     this.heartPickups.getChildren().forEach((h) => destroyIfBelow(h as Phaser.Physics.Arcade.Sprite));
+    this.coins.getChildren().forEach((c) => destroyIfBelow(c as Phaser.Physics.Arcade.Sprite));
   }
 }

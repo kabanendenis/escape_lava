@@ -23,7 +23,7 @@ export const tightJumps: LevelPattern = {
 
 export const portalSkip: LevelPattern = {
   id: 'portal_skip',
-  difficulty: 'hard',
+  difficulty: 'special',
   heightInFloors: 2,
   minEntryX: 0,
   maxEntryX: 5,

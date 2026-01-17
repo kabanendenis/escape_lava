@@ -26,7 +26,7 @@ export interface PatternWeights {
 }
 
 export interface PatternElement {
-  type: 'platform' | 'ladder' | 'portal_in' | 'portal_out' | 'heart';
+  type: 'platform' | 'ladder' | 'portal_in' | 'portal_out' | 'heart' | 'coin';
   x: number;
   y: number;
   width?: number;

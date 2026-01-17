@@ -9,9 +9,9 @@ export const easyPatterns: LevelPattern[] = [stairsRight, stairsLeft, flatRun];
 
 export const mediumPatterns: LevelPattern[] = [platformHops, zigzag, ladderClimb];
 
-export const hardPatterns: LevelPattern[] = [tightJumps, portalSkip, mixedVertical];
+export const hardPatterns: LevelPattern[] = [tightJumps, mixedVertical];
 
-export const specialPatterns: LevelPattern[] = [restWithHeart, safeLadder];
+export const specialPatterns: LevelPattern[] = [restWithHeart, safeLadder, portalSkip];
 
 export const allPatterns: LevelPattern[] = [
   ...easyPatterns,
