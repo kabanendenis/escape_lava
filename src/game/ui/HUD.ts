@@ -6,6 +6,8 @@ export class HUD extends Phaser.GameObjects.Container {
   private timerText: Phaser.GameObjects.Text;
   private floorText: Phaser.GameObjects.Text;
   private maxHearts: number;
+  private fullscreenButton!: Phaser.GameObjects.Container;
+  private fullscreenLabel!: Phaser.GameObjects.Text;
 
   constructor(scene: Phaser.Scene, maxHearts: number) {
     super(scene, 0, 0);
@@ -19,6 +21,8 @@ export class HUD extends Phaser.GameObjects.Container {
     this.createHearts();
     this.timerText = this.createTimerText();
     this.floorText = this.createFloorText();
+    this.createFullscreenButton();
+    this.registerFullscreenEvents();
   }
 
   private createHearts(): void {
@@ -58,6 +62,62 @@ export class HUD extends Phaser.GameObjects.Container {
     text.setOrigin(1, 0);
     this.add(text);
     return text;
+  }
+
+  private createFullscreenButton(): void {
+    const width = 70;
+    const height = 28;
+    const x = 15 + width / 2;
+    const y = 58;
+
+    const container = this.scene.add.container(x, y);
+
+    const bg = this.scene.add.graphics();
+    bg.fillStyle(0x000000, 0.45);
+    bg.fillRoundedRect(-width / 2, -height / 2, width, height, 6);
+    bg.lineStyle(2, 0x6666aa, 0.9);
+    bg.strokeRoundedRect(-width / 2, -height / 2, width, height, 6);
+
+    const label = this.scene.add.text(0, 0, 'FULL', {
+      fontFamily: 'Arial Black, Arial',
+      fontSize: '14px',
+      color: '#ffffff',
+    });
+    label.setOrigin(0.5);
+
+    container.add([bg, label]);
+    container.setSize(width, height);
+    container.setInteractive();
+
+    container.on('pointerdown', () => {
+      if (!this.scene.scale.fullscreenAvailable) return;
+      if (this.scene.scale.isFullscreen) {
+        this.scene.scale.stopFullscreen();
+      } else {
+        this.scene.scale.startFullscreen();
+      }
+    });
+
+    this.fullscreenButton = container;
+    this.fullscreenLabel = label;
+    this.add(container);
+
+    if (!this.scene.scale.fullscreenAvailable) {
+      container.setVisible(false);
+    }
+
+    if (this.scene.scale.isFullscreen) {
+      this.fullscreenLabel.setText('EXIT');
+    }
+  }
+
+  private registerFullscreenEvents(): void {
+    this.scene.scale.on(Phaser.Scale.Events.ENTER_FULLSCREEN, () => {
+      this.fullscreenLabel.setText('EXIT');
+    });
+    this.scene.scale.on(Phaser.Scale.Events.LEAVE_FULLSCREEN, () => {
+      this.fullscreenLabel.setText('FULL');
+    });
   }
 
   update(

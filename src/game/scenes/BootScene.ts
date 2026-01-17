@@ -52,6 +52,7 @@ export class BootScene extends Phaser.Scene {
 
   private loadAssets(): void {
     this.createPlaceholderGraphics();
+    this.load.image('player', 'assets/sprites/player.png');
 
     // Audio files are optional - game works without them
     // To add sounds, place .wav files in public/assets/audio/
@@ -64,14 +65,6 @@ export class BootScene extends Phaser.Scene {
   }
 
   private createPlaceholderGraphics(): void {
-    const playerGraphics = this.make.graphics({ x: 0, y: 0 });
-    playerGraphics.fillStyle(0x4488ff, 1);
-    playerGraphics.fillRect(0, 0, 32, 48);
-    playerGraphics.fillStyle(0xffcc99, 1);
-    playerGraphics.fillCircle(16, 10, 8);
-    playerGraphics.generateTexture('player', 32, 48);
-    playerGraphics.destroy();
-
     const platformGraphics = this.make.graphics({ x: 0, y: 0 });
     platformGraphics.fillStyle(COLORS.PLATFORM, 1);
     platformGraphics.fillRect(0, 0, 32, 32);
@@ -192,6 +185,20 @@ export class BootScene extends Phaser.Scene {
   }
 
   create(): void {
+    if (!this.textures.exists('player')) {
+      this.createPlayerPlaceholder();
+    }
+
     this.scene.start(SCENES.MENU);
+  }
+
+  private createPlayerPlaceholder(): void {
+    const playerGraphics = this.make.graphics({ x: 0, y: 0 });
+    playerGraphics.fillStyle(0x4488ff, 1);
+    playerGraphics.fillRect(0, 0, 32, 48);
+    playerGraphics.fillStyle(0xffcc99, 1);
+    playerGraphics.fillCircle(16, 10, 8);
+    playerGraphics.generateTexture('player', 32, 48);
+    playerGraphics.destroy();
   }
 }
