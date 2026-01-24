@@ -1,4 +1,4 @@
-const COUNTER_NAMESPACE = 'escape-lava';
+﻿const COUNTER_NAMESPACE = 'escape-lava';
 const COUNTER_NAME = 'launches';
 
 type CounterApiResponse = {

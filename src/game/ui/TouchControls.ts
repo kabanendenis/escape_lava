@@ -209,6 +209,18 @@ export class TouchControls extends Phaser.GameObjects.Container {
       this.releasePointer(pointer.id);
     });
 
+    this.scene.input.on('pointercancel', (pointer: Phaser.Input.Pointer) => {
+      this.releasePointer(pointer.id);
+    });
+
+    this.scene.input.on('gameout', () => {
+      this.resetAll();
+    });
+
+    this.scene.events.on('update', this.validatePointers, this);
+    this.scene.events.once('shutdown', this.cleanup, this);
+    this.scene.events.once('destroy', this.cleanup, this);
+
     window.addEventListener('blur', this.resetAll);
     document.addEventListener('visibilitychange', this.handleVisibilityChange);
   }
@@ -266,5 +278,26 @@ export class TouchControls extends Phaser.GameObjects.Container {
     if (this.rightButton?.container === container) return this.rightButton;
     if (this.jumpButton?.container === container) return this.jumpButton;
     return null;
+  }
+
+  private validatePointers(): void {
+    const buttons = [this.leftButton, this.rightButton, this.jumpButton];
+    for (const btn of buttons) {
+      if (!btn || btn.pointerId === null) continue;
+      const pointer = this.scene.input.pointers.find((p) => p.id === btn.pointerId);
+      if (!pointer || !pointer.isDown) {
+        this.releasePointer(btn.pointerId);
+      }
+    }
+  }
+
+  private cleanup(): void {
+    this.scene.input.off('pointerup');
+    this.scene.input.off('pointerupoutside');
+    this.scene.input.off('pointercancel');
+    this.scene.input.off('gameout');
+    this.scene.events.off('update', this.validatePointers, this);
+    window.removeEventListener('blur', this.resetAll);
+    document.removeEventListener('visibilitychange', this.handleVisibilityChange);
   }
 }

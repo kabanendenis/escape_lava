@@ -8,6 +8,7 @@ function getDefaultData(): HighScores {
     version: CURRENT_VERSION,
     scores: {},
     tutorialShown: false,
+    playerName: '',
   };
 }
 
@@ -62,6 +63,17 @@ export function isTutorialShown(): boolean {
 export function markTutorialShown(): void {
   const data = loadGameData();
   data.tutorialShown = true;
+  saveGameData(data);
+}
+
+export function getPlayerName(): string {
+  const data = loadGameData();
+  return data.playerName || '';
+}
+
+export function setPlayerName(name: string): void {
+  const data = loadGameData();
+  data.playerName = name;
   saveGameData(data);
 }
 

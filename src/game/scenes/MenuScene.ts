@@ -1,13 +1,17 @@
-import Phaser from 'phaser';
+﻿import Phaser from 'phaser';
 import { SCENES, GAME_WIDTH, GAME_HEIGHT, COLORS } from '../config';
 import { DIFFICULTIES } from '../config/DifficultyConfig';
 import { DifficultyLevel, GameData } from '../types';
 import { getHighScore, formatTime } from '../utils';
+import { fetchLeaderboard, LeaderboardEntry } from '../../telemetry/leaderboard';
 
 export class MenuScene extends Phaser.Scene {
   private selectedDifficulty: DifficultyLevel = DifficultyLevel.NORMAL;
   private difficultyButtons: Phaser.GameObjects.Container[] = [];
   private selectedIndicator!: Phaser.GameObjects.Graphics;
+  private leaderboardText?: Phaser.GameObjects.Text;
+  private leaderboardTitle?: Phaser.GameObjects.Text;
+  private leaderboardRequestId = 0;
 
   constructor() {
     super({ key: SCENES.MENU });
@@ -16,6 +20,7 @@ export class MenuScene extends Phaser.Scene {
   create(): void {
     this.createBackground();
     this.createTitle();
+    this.createLeaderboardPanel();
     this.createDifficultyButtons();
     this.createPlayButton();
     this.createInstructions();
@@ -53,6 +58,42 @@ export class MenuScene extends Phaser.Scene {
       color: '#ffaa66',
     });
     subtitle.setOrigin(0.5);
+  }
+
+  private createLeaderboardPanel(): void {
+    const panelWidth = 260;
+    const panelHeight = 260;
+    const panelX = GAME_WIDTH - panelWidth / 2 - 20;
+    const panelY = 170;
+
+    const panel = this.add.rectangle(
+      panelX,
+      panelY + panelHeight / 2,
+      panelWidth,
+      panelHeight,
+      0x000000,
+      0.35,
+    );
+    panel.setOrigin(0.5);
+
+    this.leaderboardTitle = this.add.text(panelX, panelY + 8, 'ТОП 10', {
+      fontFamily: 'Arial Black, Arial',
+      fontSize: '20px',
+      color: '#ffffff',
+    });
+    this.leaderboardTitle.setOrigin(0.5, 0);
+
+    this.leaderboardText = this.add.text(
+      panelX - panelWidth / 2 + 16,
+      panelY + 44,
+      'Загрузка...',
+      {
+        fontFamily: 'Arial',
+        fontSize: '16px',
+        color: '#ffffff',
+        lineSpacing: 6,
+      },
+    );
   }
 
   private createDifficultyButtons(): void {
@@ -127,6 +168,39 @@ export class MenuScene extends Phaser.Scene {
       50,
       10
     );
+
+    void this.loadLeaderboard(level);
+  }
+
+  private async loadLeaderboard(difficulty: DifficultyLevel): Promise<void> {
+    const requestId = ++this.leaderboardRequestId;
+    const settings = DIFFICULTIES[difficulty];
+
+    if (this.leaderboardTitle) {
+      this.leaderboardTitle.setText(`ТОП 10 - ${settings.nameRu}`);
+    }
+    if (this.leaderboardText) {
+      this.leaderboardText.setText('Загрузка...');
+    }
+
+    const entries = await fetchLeaderboard(difficulty, 10);
+    if (requestId !== this.leaderboardRequestId) return;
+
+    this.updateLeaderboardText(entries);
+  }
+
+  private updateLeaderboardText(entries: LeaderboardEntry[]): void {
+    if (!this.leaderboardText) return;
+
+    if (entries.length === 0) {
+      this.leaderboardText.setText('Пока нет результатов');
+      return;
+    }
+
+    const lines = entries.map(
+      (entry, index) => `${index + 1}. ${entry.name} - ${formatTime(entry.timeMs)}`,
+    );
+    this.leaderboardText.setText(lines.join('\n'));
   }
 
   private createPlayButton(): void {

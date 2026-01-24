@@ -1,8 +1,9 @@
-import Phaser from 'phaser';
+﻿import Phaser from 'phaser';
 import { SCENES, GAME_WIDTH, GAME_HEIGHT } from '../config';
 import { DIFFICULTIES } from '../config/DifficultyConfig';
 import { DifficultyLevel, GameData } from '../types';
-import { formatTime, getHighScore } from '../utils';
+import { formatTime, getHighScore, getPlayerName, setPlayerName } from '../utils';
+import { fetchLeaderboard, LeaderboardEntry, submitScore } from '../../telemetry/leaderboard';
 
 interface ResultData extends GameData {
   isNewRecord?: boolean;
@@ -13,6 +14,7 @@ export class ResultScene extends Phaser.Scene {
   private finalTime!: number;
   private won!: boolean;
   private isNewRecord!: boolean;
+  private leaderboardText?: Phaser.GameObjects.Text;
 
   constructor() {
     super({ key: SCENES.RESULT });
@@ -28,7 +30,9 @@ export class ResultScene extends Phaser.Scene {
   create(): void {
     this.createBackground();
     this.createContent();
+    this.createLeaderboardSection();
     this.createButtons();
+    void this.loadLeaderboard();
   }
 
   private createBackground(): void {
@@ -129,6 +133,42 @@ export class ResultScene extends Phaser.Scene {
     }
   }
 
+  private createLeaderboardSection(): void {
+    const panelWidth = 300;
+    const panelHeight = 320;
+    const panelX = GAME_WIDTH - panelWidth / 2 - 20;
+    const panelY = 170;
+
+    const panel = this.add.rectangle(
+      panelX,
+      panelY + panelHeight / 2,
+      panelWidth,
+      panelHeight,
+      0x000000,
+      0.35,
+    );
+    panel.setOrigin(0.5);
+
+    const title = this.add.text(panelX, panelY + 8, 'ТОП 10', {
+      fontFamily: 'Arial Black, Arial',
+      fontSize: '22px',
+      color: '#ffffff',
+    });
+    title.setOrigin(0.5, 0);
+
+    this.leaderboardText = this.add.text(
+      panelX - panelWidth / 2 + 16,
+      panelY + 46,
+      'Загрузка...',
+      {
+        fontFamily: 'Arial',
+        fontSize: '18px',
+        color: '#ffffff',
+        lineSpacing: 6,
+      },
+    );
+  }
+
   private createWinAnimation(title: Phaser.GameObjects.Text): void {
     this.tweens.add({
       targets: title,
@@ -153,6 +193,62 @@ export class ResultScene extends Phaser.Scene {
         });
       });
     }
+  }
+
+  private async loadLeaderboard(): Promise<void> {
+    const entries = await fetchLeaderboard(this.difficulty, 10);
+    this.updateLeaderboardText(entries);
+
+    if (!this.shouldPromptForName(entries)) return;
+
+    const name = this.promptForName();
+    if (!name) return;
+
+    const submitted = await submitScore(name, this.finalTime, this.difficulty);
+    if (!submitted) return;
+
+    const refreshed = await fetchLeaderboard(this.difficulty, 10);
+    this.updateLeaderboardText(refreshed);
+  }
+
+  private shouldPromptForName(entries: LeaderboardEntry[]): boolean {
+    if (!this.won) return false;
+    if (this.finalTime <= 0) return false;
+    if (entries.length < 10) return true;
+    return this.finalTime < entries[entries.length - 1].timeMs;
+  }
+
+  private promptForName(): string | null {
+    const savedName = getPlayerName();
+    const raw = window.prompt(
+      'Введите имя (A-Z, 0-9, _), 3-12 символов:',
+      savedName,
+    );
+
+    if (!raw) return null;
+
+    const sanitized = raw.trim().replace(/[^A-Za-z0-9_]/g, '').slice(0, 12);
+    if (sanitized.length < 3) {
+      window.alert('Нужно 3-12 символов: A-Z, 0-9 или _.');
+      return null;
+    }
+
+    setPlayerName(sanitized);
+    return sanitized;
+  }
+
+  private updateLeaderboardText(entries: LeaderboardEntry[]): void {
+    if (!this.leaderboardText) return;
+
+    if (entries.length === 0) {
+      this.leaderboardText.setText('Пока нет результатов');
+      return;
+    }
+
+    const lines = entries.map(
+      (entry, index) => `${index + 1}. ${entry.name} - ${formatTime(entry.timeMs)}`,
+    );
+    this.leaderboardText.setText(lines.join('\n'));
   }
 
   private createButtons(): void {

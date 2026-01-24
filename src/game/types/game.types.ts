@@ -54,6 +54,7 @@ export interface HighScores {
   version: number;
   scores: Partial<Record<DifficultyLevel, HighScoreEntry>>;
   tutorialShown: boolean;
+  playerName?: string;
 }
 
 export enum GameState {
