@@ -1,37 +1,31 @@
 import { DifficultyLevel } from '../game/types';
 
-const DREAMLO_BASE_URL = 'http://dreamlo.com/lb';
-const DREAMLO_PRIVATE_CODE = 'jIB6y8F9JEWzLP98ePrOfAZyLB0mEhHEK_xYf8tpk-rw';
-const DREAMLO_PUBLIC_CODE = '69749e4e8f40bb1184c17150';
-
-type DreamloEntry = {
-  name?: string;
-  score?: string;
-  seconds?: string;
-  text?: string;
-  date?: string;
-};
-
-type DreamloResponse = {
-  dreamlo?: {
-    leaderboard?: {
-      entry?: DreamloEntry | DreamloEntry[];
-    };
-  };
-};
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string | undefined;
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;
 
 export type LeaderboardEntry = {
   name: string;
   timeMs: number;
-  timeSeconds: number;
-  text?: string;
-  date?: string;
+  createdAt?: string;
 };
 
-function normalizeEntries(data: DreamloResponse): DreamloEntry[] {
-  const entry = data.dreamlo?.leaderboard?.entry;
-  if (!entry) return [];
-  return Array.isArray(entry) ? entry : [entry];
+type SupabaseScoreRow = {
+  name: string;
+  time_ms: number;
+  created_at: string;
+};
+
+function getRestEndpoint(path: string): string | null {
+  if (!SUPABASE_URL || !SUPABASE_ANON_KEY) return null;
+  return `${SUPABASE_URL.replace(/\/+$/, '')}/rest/v1/${path}`;
+}
+
+async function supabaseFetch(url: string, options: RequestInit): Promise<Response> {
+  const headers = new Headers(options.headers);
+  headers.set('apikey', SUPABASE_ANON_KEY || '');
+  headers.set('Authorization', `Bearer ${SUPABASE_ANON_KEY || ''}`);
+  headers.set('Content-Type', 'application/json');
+  return fetch(url, { ...options, headers });
 }
 
 export async function submitScore(
@@ -39,14 +33,20 @@ export async function submitScore(
   timeMs: number,
   difficulty: DifficultyLevel,
 ): Promise<boolean> {
-  const timeSeconds = Math.max(0, Math.round(timeMs / 1000));
-  const score = timeSeconds;
-  const url = `${DREAMLO_BASE_URL}/${DREAMLO_PRIVATE_CODE}/add/${encodeURIComponent(
+  const endpoint = getRestEndpoint('scores');
+  if (!endpoint) return false;
+
+  const payload = {
     name,
-  )}/${score}/${timeSeconds}/${encodeURIComponent(difficulty)}`;
+    time_ms: Math.max(1, Math.round(timeMs)),
+    difficulty,
+  };
 
   try {
-    const response = await fetch(url, { method: 'GET' });
+    const response = await supabaseFetch(endpoint, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
     return response.ok;
   } catch {
     return false;
@@ -57,29 +57,23 @@ export async function fetchLeaderboard(
   difficulty: DifficultyLevel,
   limit: number = 10,
 ): Promise<LeaderboardEntry[]> {
-  const url = `${DREAMLO_BASE_URL}/${DREAMLO_PUBLIC_CODE}/json`;
+  const endpoint = getRestEndpoint(
+    `scores?select=name,time_ms,created_at&difficulty=eq.${encodeURIComponent(
+      difficulty,
+    )}&order=time_ms.asc&limit=${limit}`,
+  );
+  if (!endpoint) return [];
 
   try {
-    const response = await fetch(url, { method: 'GET' });
+    const response = await supabaseFetch(endpoint, { method: 'GET' });
     if (!response.ok) return [];
 
-    const data = (await response.json()) as DreamloResponse;
-    const entries = normalizeEntries(data)
-      .filter((entry) => entry.text === difficulty)
-      .map((entry) => {
-        const secondsValue = Number(entry.seconds ?? entry.score ?? 0);
-        const safeSeconds = Number.isFinite(secondsValue) ? secondsValue : 0;
-        return {
-          name: entry.name || 'Unknown',
-          timeSeconds: safeSeconds,
-          timeMs: Math.round(safeSeconds * 1000),
-          text: entry.text,
-          date: entry.date,
-        };
-      })
-      .sort((a, b) => a.timeSeconds - b.timeSeconds);
-
-    return entries.slice(0, limit);
+    const rows = (await response.json()) as SupabaseScoreRow[];
+    return rows.map((row) => ({
+      name: row.name || 'Unknown',
+      timeMs: row.time_ms,
+      createdAt: row.created_at,
+    }));
   } catch {
     return [];
   }
