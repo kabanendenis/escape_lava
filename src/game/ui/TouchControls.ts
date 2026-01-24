@@ -284,7 +284,9 @@ export class TouchControls extends Phaser.GameObjects.Container {
     const buttons = [this.leftButton, this.rightButton, this.jumpButton];
     for (const btn of buttons) {
       if (!btn || btn.pointerId === null) continue;
-      const pointer = this.scene.input.pointers.find((p) => p.id === btn.pointerId);
+      const pointer = this.scene.input.manager.pointers.find(
+        (p: Phaser.Input.Pointer) => p.id === btn.pointerId,
+      );
       if (!pointer || !pointer.isDown) {
         this.releasePointer(btn.pointerId);
       }
